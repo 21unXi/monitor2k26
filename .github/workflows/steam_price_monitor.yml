@@ -1,29 +1,29 @@
-name: Steam 价格监控
+name: Steam Price Monitor
 
 on:
   schedule:
-    # 每天 UTC 时间 02:00 运行 (即北京时间上午 10:00)
+    # Runs at 02:00 UTC every day (10:00 AM Beijing Time)
     - cron: '0 2 * * *'
   workflow_dispatch:
-    # 允许从 Actions 选项卡手动触发
+    # Allows manual triggering from the Actions tab
 
 jobs:
   check-price:
     runs-on: ubuntu-latest
     
     steps:
-    - name: 检出代码
+    - name: Checkout code
       uses: actions/checkout@v3
       
-    - name: 设置 Python 环境
+    - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.9'
         
-    - name: 安装依赖
+    - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
-    - name: 运行价格监控脚本
+    - name: Run Price Monitor Script
       run: python monitor.py
