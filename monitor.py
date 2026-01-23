@@ -1,14 +1,20 @@
 import requests
+import sys
+import os
+import datetime
 
 # Steam Store API 端点
 API_URL = "https://store.steampowered.com/api/appdetails"
 
 # 需要监控的游戏 App ID 列表
-# 3472040: NBA 2K26 (基于搜索结果的占位符，请确认)
-# 你可以在此列表中添加更多 App ID
 APP_IDS = [
     "3472040", 
 ]
+
+# 日志文件配置
+LOG_FILE = "price_log.txt"
+MAX_LOG_LINES = 100
+RESULT_FILE = "result.md" # 用于邮件发送的临时文件
 
 def get_game_price(app_id):
     """
@@ -41,10 +47,42 @@ def get_game_price(app_id):
         print(f"[Error] Network error for App ID {app_id}: {e}")
         return None
 
+def update_rolling_log(new_lines):
+    """
+    更新滚动日志文件，保持最大行数限制
+    """
+    lines = []
+    if os.path.exists(LOG_FILE):
+        try:
+            with open(LOG_FILE, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+        except Exception as e:
+            print(f"Error reading log file: {e}")
+    
+    # 追加新内容
+    lines.extend([line + "\n" for line in new_lines])
+    
+    # 保持最大行数（保留最后的 MAX_LOG_LINES 行）
+    if len(lines) > MAX_LOG_LINES:
+        lines = lines[-MAX_LOG_LINES:]
+        
+    try:
+        with open(LOG_FILE, "w", encoding="utf-8") as f:
+            f.writelines(lines)
+        print(f"Updated {LOG_FILE} with {len(new_lines)} new lines.")
+    except Exception as e:
+        print(f"Error writing log file: {e}")
+
 def main():
     print("Starting Steam Price Monitor...\n")
     print(f"Monitoring {len(APP_IDS)} games.")
     print("-" * 50)
+    
+    log_entries = []
+    notify_content = []
+    should_notify = False
+    
+    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     for app_id in APP_IDS:
         print(f"Checking App ID: {app_id}...")
@@ -54,34 +92,55 @@ def main():
             name = details.get("name", f"App {app_id}")
             price_overview = details.get("price_overview")
             
+            log_line = ""
+            
             if price_overview:
                 currency = price_overview.get("currency")
-                initial = price_overview.get("initial") / 100  # 转换为标准单位（元）
+                initial = price_overview.get("initial") / 100
                 final = price_overview.get("final") / 100
                 discount = price_overview.get("discount_percent")
                 
+                # 构建日志行
+                log_line = f"[{current_time}] {name}: {final} {currency}"
+                if discount > 0:
+                    log_line += f" (SALE -{discount}% | Orig: {initial})"
+                    should_notify = True
+                    notify_content.append(f"🔥 {name} 正在打折！\n现价: {final} {currency}\n原价: {initial} {currency}\n折扣: {discount}% OFF")
+                else:
+                    log_line += " (Regular)"
+                
+                # 打印到控制台
                 print(f"Game: {name}")
                 print(f"Current Price: {final} {currency}")
-                
                 if discount > 0:
-                    print(f"Original Price: {initial} {currency}")
                     print(f"Discount: {discount}% OFF!")
                     print("Status: ON SALE!")
-                else:
-                    print("Status: Regular Price")
-            else:
-                # 免费游戏或尚未发布价格
-                is_free = details.get("is_free", False)
-                release_date = details.get("release_date", {}).get("date", "Unknown")
                 
-                print(f"Game: {name}")
+            else:
+                is_free = details.get("is_free", False)
                 if is_free:
-                    print("Price: Free to Play")
+                    log_line = f"[{current_time}] {name}: Free to Play"
                 else:
-                    print("Price: Not available (Pre-order or not listed)")
-                    print(f"Release Date: {release_date}")
+                    log_line = f"[{current_time}] {name}: No price data"
+                
+                print(f"Game: {name} (No price/Free)")
+
+            if log_line:
+                log_entries.append(log_line)
                     
         print("-" * 50)
+    
+    # 更新日志文件
+    if log_entries:
+        update_rolling_log(log_entries)
+    
+    # 如果需要通知，写入 result.md 供 GitHub Actions 使用
+    if should_notify:
+        with open(RESULT_FILE, "w", encoding="utf-8") as f:
+            f.write("## Steam 价格变动提醒\n\n")
+            f.write("\n\n".join(notify_content))
+            f.write("\n\n[查看详情](https://store.steampowered.com/)")
+        print(f"Notification content written to {RESULT_FILE}")
 
 if __name__ == "__main__":
     main()
