@@ -1,6 +1,4 @@
 import requests
-import sys
-import os
 
 # Steam Store API 端点
 API_URL = "https://store.steampowered.com/api/appdetails"
