@@ -2,8 +2,9 @@ name: Steam 价格监控
 
 on:
   schedule:
-    # 每天 UTC 时间 02:00 运行 (即北京时间上午 10:00)
-    - cron: '0 2 * * *'
+    # 每天 UTC 时间 02:30 运行 (即北京时间上午 10:30)
+    # 避开整点高峰期，减少延迟
+    - cron: '30 2 * * *'
   workflow_dispatch:
     # 允许从 Actions 选项卡手动触发
 
