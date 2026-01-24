@@ -82,7 +82,10 @@ def main():
     notify_content = []
     should_notify = False
     
-    current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # 获取当前 UTC 时间并转换为北京时间 (UTC+8)
+    utc_now = datetime.datetime.utcnow()
+    beijing_time = utc_now + datetime.timedelta(hours=8)
+    current_time = beijing_time.strftime("%Y-%m-%d %H:%M:%S")
     
     for app_id in APP_IDS:
         print(f"Checking App ID: {app_id}...")
