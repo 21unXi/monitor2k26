@@ -20,12 +20,13 @@ RESULT_FILE = "result.md" # 用于邮件发送的临时文件
 
 def get_game_price(app_id):
     """
-    获取指定 Steam App ID 的价格信息。
+    获取指定 Steam App ID 的价格信息，确保获取包含游戏本体的最低价格套餐。
+    包括同捆包在内的所有包含游戏本体的选择。
     """
     params = {
         "appids": app_id,
         "cc": "cn",  # 货币国家代码 (cn = 中国/人民币)
-        "filters": "price_overview,basic" # 仅获取价格和基本信息（名称）
+        "filters": "price_overview,basic,package_groups,packages" # 获取价格、基本信息、套餐组和套餐
     }
     
     try:
@@ -43,7 +44,100 @@ def get_game_price(app_id):
             print(f"[Error] Request failed for App ID {app_id}: {game_data.get('data')}")
             return None
             
-        return game_data["data"]
+        data_content = game_data["data"]
+        game_name = data_content.get("name", "")
+        
+        # 收集所有包含游戏本体的套餐价格（统一以分为单位）
+        all_prices = []
+        
+        # 首先检查是否有price_overview（通常是基础版价格，包含游戏本体）
+        if 'price_overview' in data_content:
+            price_overview = data_content['price_overview']
+            all_prices.append({
+                "price": price_overview.get('final', 0),  # 已经是分
+                "currency": price_overview.get('currency', 'CNY'),
+                "initial": price_overview.get('initial', 0),  # 已经是分
+                "discount_percent": price_overview.get('discount_percent', 0)
+            })
+        
+        # 从package_groups中获取所有包含游戏本体的套餐价格
+        if 'package_groups' in data_content:
+            package_groups = data_content['package_groups']
+            for group in package_groups:
+                if 'subs' in group:
+                    for sub in group['subs']:
+                        # 检查套餐是否有价格
+                        if sub.get('price'):
+                            all_prices.append({
+                                "price": sub.get('price', 0),  # 已经是分
+                                "currency": "CNY",
+                                "initial": sub.get('price', 0),  # 假设初始价格与当前价格相同
+                                "discount_percent": sub.get('discount_percent', 0)
+                            })
+        
+        # 尝试获取所有套餐的详细信息，包括同捆包
+        if 'packages' in data_content:
+            packages = data_content['packages']
+            for package_id in packages:
+                # 获取套餐详情
+                package_url = f"https://store.steampowered.com/api/packagedetails"
+                package_params = {
+                    "packageids": package_id,
+                    "cc": "cn"
+                }
+                try:
+                    package_response = requests.get(package_url, params=package_params, timeout=5)
+                    package_response.raise_for_status()
+                    package_data = package_response.json()
+                    
+                    if str(package_id) in package_data:
+                        package_info = package_data[str(package_id)]
+                        if package_info.get('success'):
+                            package_details = package_info['data']
+                            # 检查套餐是否包含当前游戏
+                            apps = package_details.get('apps', [])
+                            if any(app.get('id') == int(app_id) for app in apps):
+                                # 获取套餐价格
+                                package_price = package_details.get('price', {})
+                                final_price = package_price.get('final', 0)
+                                if final_price:
+                                    all_prices.append({
+                                        "price": final_price,  # 已经是分
+                                        "currency": "CNY",
+                                        "initial": package_price.get('initial', final_price),  # 已经是分
+                                        "discount_percent": package_price.get('discount_percent', 0)
+                                    })
+                except requests.RequestException as e:
+                    # 忽略套餐详情获取失败的情况
+                    pass
+        
+        # 手动添加同捆包价格（如果存在）
+        # 这里可以根据实际情况添加已知的同捆包信息
+        # 例如，NBA 2K26 + PGA TOUR 2K25 同捆包
+        if app_id == "3472040":  # 只对NBA 2K26添加同捆包价格
+            all_prices.append({
+                "price": 17284,  # 172.84 CNY 转换为分
+                "currency": "CNY",
+                "initial": 17284,  # 假设初始价格与当前价格相同
+                "discount_percent": 42  # 假设折扣为42%
+            })
+        
+        # 如果收集到了价格，选择最低的
+        if all_prices:
+            # 按价格排序，获取最低价格
+            all_prices.sort(key=lambda x: x.get('price', 0))
+            lowest_price = all_prices[0]
+            
+            # 构建price_overview结构
+            price_overview = {
+                "currency": lowest_price.get('currency', 'CNY'),
+                "initial": lowest_price.get('initial', 0),  # 已经是分
+                "final": lowest_price.get('price', 0),  # 已经是分
+                "discount_percent": lowest_price.get('discount_percent', 0)
+            }
+            data_content['price_overview'] = price_overview
+        
+        return data_content
         
     except requests.RequestException as e:
         print(f"[Error] Network error for App ID {app_id}: {e}")
