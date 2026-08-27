@@ -1,3 +1,49 @@
+[2026-06-30 14:36:00] Citystate Metropolis: No price data
+[2026-07-01 14:48:59] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-01 14:48:59] Citystate Metropolis: No price data
+[2026-07-02 14:12:50] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-02 14:12:50] Citystate Metropolis: No price data
+[2026-07-03 14:06:02] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-03 14:06:02] Citystate Metropolis: No price data
+[2026-07-04 13:56:46] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-04 13:56:46] Citystate Metropolis: No price data
+[2026-07-05 14:22:07] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-05 14:22:07] Citystate Metropolis: No price data
+[2026-07-06 14:49:32] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-06 14:49:32] Citystate Metropolis: No price data
+[2026-07-07 14:27:10] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-07 14:27:10] Citystate Metropolis: No price data
+[2026-07-08 13:33:47] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-08 13:33:47] Citystate Metropolis: No price data
+[2026-07-09 14:24:33] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-09 14:24:33] Citystate Metropolis: No price data
+[2026-07-10 14:23:14] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-10 14:23:14] Citystate Metropolis: No price data
+[2026-07-11 13:23:51] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-11 13:23:51] Citystate Metropolis: No price data
+[2026-07-12 13:40:07] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-12 13:40:07] Citystate Metropolis: No price data
+[2026-07-13 13:50:32] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-13 13:50:32] Citystate Metropolis: No price data
+[2026-07-14 13:11:38] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-14 13:11:38] Citystate Metropolis: No price data
+[2026-07-15 13:11:58] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-15 13:11:58] Citystate Metropolis: No price data
+[2026-07-16 13:22:39] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-16 13:22:39] Citystate Metropolis: No price data
+[2026-07-17 13:24:30] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-17 13:24:30] Citystate Metropolis: No price data
+[2026-07-18 13:06:59] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-18 13:06:59] Citystate Metropolis: No price data
+[2026-07-19 13:34:13] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-19 13:34:13] Citystate Metropolis: No price data
+[2026-07-20 13:51:23] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-20 13:51:23] Citystate Metropolis: No price data
+[2026-07-21 13:32:10] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-21 13:32:10] Citystate Metropolis: No price data
+[2026-07-22 13:31:18] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
+[2026-07-22 13:31:18] Citystate Metropolis: No price data
+[2026-07-23 13:37:10] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
 [2026-07-23 13:37:10] Citystate Metropolis: No price data
 [2026-07-24 13:32:25] NBA 2K26: 172.84 CNY (SALE -42% | Orig: 172.84)
 [2026-07-24 13:32:25] Citystate Metropolis: No price data
@@ -50,51 +96,5 @@
 [2026-08-12 23:03:34] NBA 2K26: 298.00 CNY (Regular)
 [2026-08-12 23:03:34] Citystate Metropolis: No price data
 [2026-08-12 23:03:34] Delta Force: Free to Play
-[2026-08-12 23:13:55] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-12 23:13:55] Citystate Metropolis: No price data
-[2026-08-12 23:13:55] Delta Force: Free to Play
-[2026-08-13 12:22:57] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-13 12:22:57] Citystate Metropolis: No price data
-[2026-08-13 12:22:57] Delta Force: Free to Play
-[2026-08-14 12:20:26] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-14 12:20:26] Citystate Metropolis: No price data
-[2026-08-14 12:20:26] Delta Force: Free to Play
-[2026-08-15 11:09:18] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-15 11:09:18] Citystate Metropolis: No price data
-[2026-08-15 11:09:18] Delta Force: Free to Play
-[2026-08-16 11:23:56] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-16 11:23:56] Citystate Metropolis: No price data
-[2026-08-16 11:23:56] Delta Force: Free to Play
-[2026-08-17 11:24:35] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-17 11:24:35] Citystate Metropolis: No price data
-[2026-08-17 11:24:35] Delta Force: Free to Play
-[2026-08-18 11:13:23] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-18 11:13:23] Citystate Metropolis: No price data
-[2026-08-18 11:13:23] Delta Force: Free to Play
-[2026-08-19 11:21:56] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-19 11:21:56] Citystate Metropolis: No price data
-[2026-08-19 11:21:56] Delta Force: Free to Play
-[2026-08-20 11:14:37] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-20 11:14:37] Citystate Metropolis: No price data
-[2026-08-20 11:14:37] Delta Force: Free to Play
-[2026-08-21 11:26:50] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-21 11:26:50] Citystate Metropolis: No price data
-[2026-08-21 11:26:50] Delta Force: Free to Play
-[2026-08-22 11:12:02] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-22 11:12:02] Citystate Metropolis: No price data
-[2026-08-22 11:12:02] Delta Force: Free to Play
-[2026-08-23 11:26:28] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-23 11:26:28] Citystate Metropolis: No price data
-[2026-08-23 11:26:28] Delta Force: Free to Play
-[2026-08-24 11:28:26] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-24 11:28:26] Citystate Metropolis: No price data
-[2026-08-24 11:28:26] Delta Force: Free to Play
-[2026-08-25 11:23:33] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-25 11:23:33] Citystate Metropolis: No price data
-[2026-08-25 11:23:33] Delta Force: Free to Play
-[2026-08-26 11:30:06] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-26 11:30:06] Citystate Metropolis: No price data
-[2026-08-26 11:30:06] Delta Force: Free to Play
-[2026-08-27 20:56:05] NBA 2K26: 298.00 CNY (Regular)
-[2026-08-27 20:56:05] Citystate Metropolis: No price data
-[2026-08-27 20:56:05] Delta Force: Free to Play
+[2026-08-28 01:14:18] NBA 2K26: 基础版:298.00CNY | 基础版:298.00CNY | 基础版:369.00CNY | 基础版:509.00CNY
+[2026-08-28 01:14:18] NBA 2K27 [预购|发售:3 Sep, 2026]: 基础版:298.00CNY | 基础版:298.00CNY | 基础版:460.00CNY

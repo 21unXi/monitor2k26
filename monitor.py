@@ -2,6 +2,7 @@ import requests
 import os
 import datetime
 import re
+import json
 
 # Steam Store API 端点
 API_URL = "https://store.steampowered.com/api/appdetails"
@@ -9,6 +10,7 @@ API_URL = "https://store.steampowered.com/api/appdetails"
 # 需要监控的游戏 App ID 列表
 APP_IDS = [
     "3472040", # NBA 2K26
+    "4356430", # NBA 2K27
     "2828020", # Citystate Metropolis
     "2507950", # 三角洲行动
 ]
@@ -16,7 +18,8 @@ APP_IDS = [
 # 日志文件配置
 LOG_FILE = "price_log.txt"
 MAX_LOG_LINES = 100
-RESULT_FILE = "result.md"  # 用于邮件发送的临时文件
+RESULT_FILE = "result.md"
+PRICE_STATE_FILE = "price_state.json"  # 用于邮件发送的临时文件
 
 # 价格状态常量
 PRICE_STATE_PRICE = "PRICE"
@@ -24,9 +27,114 @@ PRICE_STATE_FREE = "FREE"
 PRICE_STATE_NO_PRICE = "NO_PRICE"
 
 
+
+
+def load_price_state():
+    """Load last-known per-package price state from JSON."""
+    if not os.path.exists(PRICE_STATE_FILE):
+        return {}
+    try:
+        with open(PRICE_STATE_FILE, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+
+
+def save_price_state(state):
+    """Save current per-package price state to JSON."""
+    with open(PRICE_STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
+
+
+
+
+def find_price_changes(current_prices, last_prices):
+    """Compare current vs last prices by package name. Returns list of changes."""
+    changes = []
+    last_map = {p.get("name", "基础版"): p for p in last_prices}
+    curr_map = {p.get("name", "基础版"): p for p in current_prices}
+
+
+    for name, curr in curr_map.items():
+        if name in last_map:
+            old = last_map[name]
+            if curr["amount"] != old["amount"]:
+                changes.append({
+                    "name": name,
+                    "old_amount": old["amount"],
+                    "new_amount": curr["amount"],
+                    "currency": curr["currency"],
+                    "old_discount": old.get("discount_percent", 0),
+                    "new_discount": curr.get("discount_percent", 0),
+                })
+        else:
+            changes.append({
+                "name": name,
+                "old_amount": None,
+                "new_amount": curr["amount"],
+                "currency": curr["currency"],
+                "old_discount": 0,
+                "new_discount": curr.get("discount_percent", 0),
+            })
+
+
+    for name, old in last_map.items():
+        if name not in curr_map:
+            changes.append({
+                "name": name,
+                "old_amount": old["amount"],
+                "new_amount": None,
+                "currency": old["currency"],
+                "old_discount": old.get("discount_percent", 0),
+                "new_discount": 0,
+            })
+
+
+    return changes
+
+
+
+
+def get_release_date(details):
+    """从 Steam API 响应中提取发售日期信息。"""
+    release_date = details.get("release_date", {})
+    coming_soon = release_date.get("coming_soon", False)
+    date_str = release_date.get("date", None)
+    return {
+        "coming_soon": coming_soon,
+        "date": date_str,
+    }
+
+
+def is_game_released(release_date_info):
+    """判断游戏是否已发售（有日期且不是即将发售）。"""
+    if release_date_info is None:
+        return True  # 无信息视为已发售
+    if release_date_info.get("coming_soon", False):
+        return False
+    if release_date_info.get("date") is None:
+        return True  # 无日期但 coming_soon=False，视为已发售
+    return True
+
+
 def format_price_object(details):
     """从 Steam API 响应中标准化当前价格信息。"""
+    release_date_info = get_release_date(details)
     price_overview = details.get("price_overview")
+
+    # Convert all_prices from fen to yuan
+    all_prices_raw = details.get("all_prices", [])
+    all_prices_display = []
+    for p in all_prices_raw:
+        all_prices_display.append({
+            "amount": p.get("price", 0) / 100,
+            "initial": p.get("initial", 0) / 100,
+            "discount_percent": p.get("discount_percent", 0),
+            "currency": p.get("currency", "CNY"),
+        })
+
     if price_overview:
         currency = price_overview.get("currency", "CNY")
         initial = price_overview.get("initial", 0) / 100
@@ -38,17 +146,26 @@ def format_price_object(details):
             "initial": initial,
             "discount_percent": price_overview.get("discount_percent", 0),
             "display": f"{final:.2f} {currency}",
+            "release_date": release_date_info.get("date"),
+            "coming_soon": release_date_info.get("coming_soon", False),
+            "all_prices": all_prices_display,
         }
 
     if details.get("is_free", False):
         return {
             "state": PRICE_STATE_FREE,
             "display": "Free to Play",
+            "release_date": release_date_info.get("date"),
+            "coming_soon": release_date_info.get("coming_soon", False),
+            "all_prices": all_prices_display,
         }
 
     return {
         "state": PRICE_STATE_NO_PRICE,
         "display": "No price data",
+        "release_date": release_date_info.get("date"),
+        "coming_soon": release_date_info.get("coming_soon", False),
+        "all_prices": all_prices_display,
     }
 
 
@@ -70,12 +187,16 @@ def are_price_states_equal(a, b):
 
 def parse_log_price_line(line):
     """从日志文本行中解析最近的价格状态。"""
-    if "Free to Play" in line:
+    # 去除可能存在的预购标记以便匹配价格
+    clean_line = re.sub(r"\[预购\|发售:[^\]]*\]", "", line)
+    clean_line = re.sub(r"\[预购\]", "", clean_line)
+
+    if "Free to Play" in clean_line:
         return {"state": PRICE_STATE_FREE, "display": "Free to Play"}
-    if "No price data" in line:
+    if "No price data" in clean_line:
         return {"state": PRICE_STATE_NO_PRICE, "display": "No price data"}
 
-    match = re.search(r":\s*([\d\.]+)\s*([A-Z]+)", line)
+    match = re.search(r":\s*([\d\.]+)\s*([A-Z]+)", clean_line)
     if match:
         amount = float(match.group(1))
         currency = match.group(2)
@@ -89,59 +210,62 @@ def parse_log_price_line(line):
     return None
 
 
-def build_notification_message(game_name, current_price, last_price):
-    """根据当前价格和历史价格生成通知文本。"""
-    current_text = format_price_text(current_price)
-    last_text = format_price_text(last_price)
+def build_notification_message(game_name, current_price, changes):
+    """Build a detailed notification showing per-package price changes."""
+    coming_soon = current_price.get("coming_soon", False)
+    release_date = current_price.get("release_date")
 
-    if last_price["state"] == PRICE_STATE_PRICE and current_price["state"] == PRICE_STATE_PRICE:
-        if current_price["amount"] < last_price["amount"]:
-            title = "🔻 降价提醒！"
-            diff = last_price["amount"] - current_price["amount"]
-            extra = f"降幅: {diff:.2f} {current_price['currency']}"
-        elif current_price["amount"] > last_price["amount"]:
-            title = "🔺 涨价提醒！"
-            diff = current_price["amount"] - last_price["amount"]
-            extra = f"涨幅: {diff:.2f} {current_price['currency']}"
+    title = "📌 " + game_name + " 价格变动"
+    if coming_soon:
+        title += " [预购]"
+
+    lines = [title]
+
+    if coming_soon and release_date:
+        lines.append(f"发售日期: {release_date}")
+
+    lines.append("")
+
+    # Show changed packages
+    lines.append("变动明细:")
+    for ch in changes:
+        pname = ch["name"]
+        curr = ch["currency"]
+        if ch["old_amount"] is None:
+            lines.append(f"  🆕 新增 {pname}: {ch['new_amount']:.2f} {curr}")
+        elif ch["new_amount"] is None:
+            lines.append(f"  ❌ 下架 {pname}: {ch['old_amount']:.2f} {curr}")
+        elif ch["new_amount"] < ch["old_amount"]:
+            diff = ch["old_amount"] - ch["new_amount"]
+            lines.append(f"  🔻 {pname}: {ch['old_amount']:.2f} → {ch['new_amount']:.2f} {curr} (-{diff:.2f})")
         else:
-            title = "📌 价格变动提醒"
-            extra = "价格类型相同，但显示值发生变化。"
-    elif last_price["state"] == PRICE_STATE_NO_PRICE and current_price["state"] == PRICE_STATE_PRICE:
-        title = "🚀 上架/新价格发布！"
-        extra = "当前已获取到价格信息。"
-    elif last_price["state"] == PRICE_STATE_PRICE and current_price["state"] == PRICE_STATE_NO_PRICE:
-        title = "❗ 价格信息丢失"
-        extra = "当前无法获取到价格数据。"
-    elif last_price["state"] == PRICE_STATE_FREE and current_price["state"] == PRICE_STATE_PRICE:
-        title = "💰 从免费恢复收费"
-        extra = "当前已恢复为付费版本。"
-    elif last_price["state"] == PRICE_STATE_PRICE and current_price["state"] == PRICE_STATE_FREE:
-        title = "🎉 现在免费游玩！"
-        extra = "游戏已转为免费。"
-    else:
-        title = "💡 价格状态改变"
-        extra = "价格状态发生变化。"
+            diff = ch["new_amount"] - ch["old_amount"]
+            lines.append(f"  🔺 {pname}: {ch['old_amount']:.2f} → {ch['new_amount']:.2f} {curr} (+{diff:.2f})")
 
-    lines = [title, f"游戏: {game_name}", f"旧价格: {last_text}", f"新价格: {current_text}"]
-
-    if current_price["state"] == PRICE_STATE_PRICE and current_price.get("discount_percent", 0) > 0:
-        lines.append(f"当前折扣: {current_price['discount_percent']}%")
-    if current_price["state"] == PRICE_STATE_PRICE and current_price.get("initial", 0) > current_price["amount"]:
-        lines.append(f"原价: {current_price['initial']:.2f} {current_price['currency']}")
-    lines.append(extra)
+    # Show all current prices with package names
+    all_prices = current_price.get("all_prices", [])
+    if all_prices:
+        lines.append("")
+        lines.append("📦 当前所有套餐:")
+        for i, p in enumerate(all_prices, 1):
+            pname = p.get("name", "基础版")
+            amt = p.get("amount", 0)
+            disc = p.get("discount_percent", 0)
+            orig = p.get("initial", 0)
+            if disc > 0:
+                lines.append(f"  {i}. [{pname}] {amt:.2f} {p['currency']} (SALE -{disc}% | 原价: {orig:.2f})")
+            else:
+                lines.append(f"  {i}. [{pname}] {amt:.2f} {p['currency']}")
 
     return "\n".join(lines)
 
 
 def get_game_price(app_id):
-    """
-    获取指定 Steam App ID 的价格信息，确保获取包含游戏本体的最低价格套餐。
-    包括同捆包在内的所有包含游戏本体的选择。
-    """
+    """\n    获取指定 Steam App ID 的价格信息，确保获取包含游戏本体的最低价格套餐。\n    包括同捆包在内的所有包含游戏本体的选择。\n    """
     params = {
         "appids": app_id,
         "cc": "cn",  # 货币国家代码 (cn = 中国/人民币)
-        "filters": "price_overview,basic,package_groups,packages" # 获取价格、基本信息、套餐组和套餐
+        "filters": "price_overview,basic,package_groups,packages,release_date" # 获取价格、基本信息、套餐组和发售日期
     }
     
     try:
@@ -169,6 +293,7 @@ def get_game_price(app_id):
         if 'price_overview' in data_content:
             price_overview = data_content['price_overview']
             all_prices.append({
+                "name": "基础版",
                 "price": price_overview.get('final', 0),  # 已经是分
                 "currency": price_overview.get('currency', 'CNY'),
                 "initial": price_overview.get('initial', 0),  # 已经是分
@@ -184,6 +309,7 @@ def get_game_price(app_id):
                         # 检查套餐是否有价格
                         if sub.get('price'):
                             all_prices.append({
+                                "name": sub.get("description", "套餐"),
                                 "price": sub.get('price', 0),  # 已经是分
                                 "currency": "CNY",
                                 "initial": sub.get('price', 0),  # 假设初始价格与当前价格相同
@@ -217,6 +343,7 @@ def get_game_price(app_id):
                                 final_price = package_price.get('final', 0)
                                 if final_price:
                                     all_prices.append({
+                                        "name": package_details.get("name", "同捆包"),
                                         "price": final_price,  # 价格 已经是分 
                                         "currency": "CNY", # 货币
                                         "initial": package_price.get('initial', final_price),  # 原始价格 已经是分 
@@ -240,6 +367,14 @@ def get_game_price(app_id):
         # 如果收集到了价格，选择最低的
         if all_prices:
             # 按价格排序，获取最低价格
+            # Deduplicate by name (keep lowest price per name)
+            seen = {}
+            for p in all_prices:
+                n = p.get("name", "基础版")
+                if n not in seen or p["price"] < seen[n]["price"]:
+                    seen[n] = p
+            all_prices = list(seen.values())
+
             all_prices.sort(key=lambda x: x.get('price', 0))
             lowest_price = all_prices[0]
             
@@ -251,6 +386,9 @@ def get_game_price(app_id):
                 "discount_percent": lowest_price.get('discount_percent', 0)
             }
             data_content['price_overview'] = price_overview
+            
+            # Store all package prices for notification display
+            data_content['all_prices'] = all_prices
         
         return data_content
         
@@ -259,10 +397,7 @@ def get_game_price(app_id):
         return None
 
 def get_last_price(game_name):
-    """
-    从日志文件中读取指定游戏上一次记录的价格信息。
-    返回标准化的价格对象，而不是简单字符串，便于准确比较。
-    """
+    """\n    从日志文件中读取指定游戏上一次记录的价格信息。\n    返回标准化的价格对象，而不是简单字符串，便于准确比较。\n    """
     if not os.path.exists(LOG_FILE):
         return None
 
@@ -280,9 +415,7 @@ def get_last_price(game_name):
     return None
 
 def update_rolling_log(new_lines):
-    """
-    更新滚动日志文件，保持最大行数限制
-    """
+    """\n    更新滚动日志文件，保持最大行数限制\n    """
     lines = []
     if os.path.exists(LOG_FILE):
         try:
@@ -309,67 +442,102 @@ def main():
     print("Starting Steam Price Monitor...\n")
     print(f"Monitoring {len(APP_IDS)} games.")
     print("-" * 50)
-    
+
     log_entries = []
     notify_content = []
     should_notify = False
-    # notify_content 仅在实际价格状态差异时填充，避免首次运行或无变化时误发通知。
-    
-    # 获取当前 UTC 时间并转换为北京时间 (UTC+8)
+
     utc_now = datetime.datetime.utcnow()
     beijing_time = utc_now + datetime.timedelta(hours=8)
     current_time = beijing_time.strftime("%Y-%m-%d %H:%M:%S")
-    
+
+    # Load previous per-package price state
+    price_state = load_price_state()
+
     for app_id in APP_IDS:
         print(f"Checking App ID: {app_id}...")
         details = get_game_price(app_id)
-        
+
         if details:
-                name = details.get("name", f"App {app_id}")
-                current_price = format_price_object(details)
-                last_price = get_last_price(name)
-                log_line = ""
+            name = details.get("name", f"App {app_id}")
+            current_price = format_price_object(details)
 
-                if current_price["state"] == PRICE_STATE_PRICE:
-                    currency = current_price["currency"]
-                    final = current_price["amount"]
-                    discount = current_price["discount_percent"]
-                    log_line = f"[{current_time}] {name}: {final:.2f} {currency}"
-                    if discount > 0:
-                        log_line += f" (SALE -{discount}% | Orig: {current_price['initial']:.2f})"
-                    else:
-                        log_line += " (Regular)"
+            # Build name tag for log
+            coming_soon = current_price.get("coming_soon", False)
+            release_date = current_price.get("release_date")
+            name_tag = name
+            if coming_soon and release_date:
+                name_tag = f"{name} [预购|发售:{release_date}]"
+            elif coming_soon:
+                name_tag = f"{name} [预购]"
 
-                    print(f"Game: {name}")
-                    print(f"Current Price: {final:.2f} {currency}")
-                    if discount > 0:
-                        print(f"Discount: {discount}% OFF!")
-                        print("Status: ON SALE!")
+            # Build log line with all package prices and names
+            log_line = ""
+            if current_price["state"] == PRICE_STATE_PRICE:
+                all_prices_log = current_price.get("all_prices", [])
+                if all_prices_log:
+                    parts = []
+                    for p in all_prices_log:
+                        pname = p.get("name", "基础版")
+                        part = f"{pname}:{p['amount']:.2f}{p['currency']}"
+                        if p["discount_percent"] > 0:
+                            part += f"(-{p['discount_percent']}%)"
+                        parts.append(part)
+                    log_line = f"[{current_time}] {name_tag}: " + " | ".join(parts)
                 else:
-                    if current_price["state"] == PRICE_STATE_FREE:
-                        log_line = f"[{current_time}] {name}: Free to Play"
-                    else:
-                        log_line = f"[{current_time}] {name}: No price data"
-                    print(f"Game: {name} (No price/Free)")
+                    log_line = f"[{current_time}] {name_tag}: {format_price_text(current_price)}"
 
-                if last_price is None:
-                    print(f"No history for {name}, recording current status.")
-                elif are_price_states_equal(current_price, last_price):
-                    print("Price unchanged.")
-                else:
-                    print(f"Price changed! Old: {format_price_text(last_price)}, New: {format_price_text(current_price)}")
-                    notify_content.append(build_notification_message(name, current_price, last_price))
+                print(f"Game: {name_tag}")
+                print(f"Current Price: {format_price_text(current_price)}")
+            else:
+                log_line = f"[{current_time}] {name_tag}: {format_price_text(current_price)}"
+                print(f"Game: {name_tag} ({format_price_text(current_price)})")
+
+            # Compare per-package prices with previous state
+            current_all = current_price.get("all_prices", [])
+            last_all = price_state.get(name, [])
+
+            if last_all:
+                changes = find_price_changes(current_all, last_all)
+                if changes:
+                    print(f"  -> {len(changes)} package(s) changed!")
+                    for ch in changes:
+                        if ch["old_amount"] is None:
+                            print(f"     NEW: {ch['name']} = {ch['new_amount']:.2f}")
+                        elif ch["new_amount"] is None:
+                            print(f"     REMOVED: {ch['name']}")
+                        else:
+                            direction = "down" if ch["new_amount"] < ch["old_amount"] else "up"
+                            print(f"     {ch['name']}: {ch['old_amount']:.2f} -> {ch['new_amount']:.2f} ({direction})")
+                    notify_content.append(
+                        build_notification_message(name, current_price, changes)
+                    )
                     should_notify = True
+                else:
+                    print("  -> All package prices unchanged.")
+            else:
+                print(f"  -> No history for {name}, recording current state.")
 
-                if log_line:
-                    log_entries.append(log_line)
+            # Update state with current per-package prices
+            price_state[name] = [
+                {"name": p.get("name", "基础版"), "amount": p["amount"], "currency": p["currency"],
+                 "discount_percent": p.get("discount_percent", 0)}
+                for p in current_all
+            ]
+
+            if log_line:
+                log_entries.append(log_line)
+
         print("-" * 50)
-    
-    # 更新日志文件
+
+    # Save updated price state
+    save_price_state(price_state)
+
+    # Update log file
     if log_entries:
         update_rolling_log(log_entries)
-    
-    # 如果需要通知，写入 result.md 供 GitHub Actions 使用
+
+    # Write notification file
     if should_notify and notify_content:
         with open(RESULT_FILE, "w", encoding="utf-8") as f:
             f.write("## Steam 价格变动提醒\n\n")
@@ -377,8 +545,8 @@ def main():
             f.write("\n\n[查看详情](https://store.steampowered.com/)")
         print(f"Notification content written to {RESULT_FILE}")
     elif os.path.exists(RESULT_FILE):
-        # 如果没有通知内容，但文件存在（可能是上次残留），删除它以免误发
         os.remove(RESULT_FILE)
+
 
 if __name__ == "__main__":
     main()

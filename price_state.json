@@ -1,0 +1,48 @@
+{
+  "NBA 2K26": [
+    {
+      "name": "基础版",
+      "amount": 298.0,
+      "currency": "CNY",
+      "discount_percent": 0
+    },
+    {
+      "name": "基础版",
+      "amount": 298.0,
+      "currency": "CNY",
+      "discount_percent": 0
+    },
+    {
+      "name": "基础版",
+      "amount": 369.0,
+      "currency": "CNY",
+      "discount_percent": 0
+    },
+    {
+      "name": "基础版",
+      "amount": 509.0,
+      "currency": "CNY",
+      "discount_percent": 0
+    }
+  ],
+  "NBA 2K27": [
+    {
+      "name": "基础版",
+      "amount": 298.0,
+      "currency": "CNY",
+      "discount_percent": 0
+    },
+    {
+      "name": "基础版",
+      "amount": 298.0,
+      "currency": "CNY",
+      "discount_percent": 0
+    },
+    {
+      "name": "基础版",
+      "amount": 460.0,
+      "currency": "CNY",
+      "discount_percent": 0
+    }
+  ]
+}
