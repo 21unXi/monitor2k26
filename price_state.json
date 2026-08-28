@@ -1,18 +1,64 @@
 {
   "NBA 2K26": [
     {
+      "id": "base",
       "name": "基础版",
       "amount": 298.0,
+      "currency": "CNY",
+      "discount_percent": 0
+    },
+    {
+      "id": "pkg_1226530",
+      "name": "NBA 2K26",
+      "amount": 298.0,
+      "currency": "CNY",
+      "discount_percent": 0
+    },
+    {
+      "id": "pkg_1345305",
+      "name": "NBA 2K26 SLAM Edition",
+      "amount": 369.0,
+      "currency": "CNY",
+      "discount_percent": 0
+    },
+    {
+      "id": "pkg_1345273",
+      "name": "NBA 2K26 Superstar Edition",
+      "amount": 509.0,
       "currency": "CNY",
       "discount_percent": 0
     }
   ],
   "NBA 2K27": [
     {
+      "id": "base",
       "name": "基础版",
       "amount": 298.0,
       "currency": "CNY",
       "discount_percent": 0
+    },
+    {
+      "id": "pkg_1687528",
+      "name": "NBA 2K27 Standard Edition",
+      "amount": 298.0,
+      "currency": "CNY",
+      "discount_percent": 0
+    },
+    {
+      "id": "pkg_1687537",
+      "name": "NBA 2K27 Deluxe Edition",
+      "amount": 460.0,
+      "currency": "CNY",
+      "discount_percent": 0
+    },
+    {
+      "id": "pkg_1687561",
+      "name": "NBA 2K27 Ultra Edition",
+      "amount": 599.0,
+      "currency": "CNY",
+      "discount_percent": 0
     }
-  ]
+  ],
+  "Citystate Metropolis": [],
+  "Delta Force": []
 }
