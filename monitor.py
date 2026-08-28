@@ -51,18 +51,18 @@ def save_price_state(state):
 
 
 def find_price_changes(current_prices, last_prices):
-    """Compare current vs last prices by package name. Returns list of changes."""
+    """Compare current vs last prices by package id. Returns list of changes."""
     changes = []
-    last_map = {p.get("name", "基础版"): p for p in last_prices}
-    curr_map = {p.get("name", "基础版"): p for p in current_prices}
+    last_map = {p.get("id", p.get("name", "unknown")): p for p in last_prices}
+    curr_map = {p.get("id", p.get("name", "unknown")): p for p in current_prices}
 
 
-    for name, curr in curr_map.items():
-        if name in last_map:
-            old = last_map[name]
+    for pid, curr in curr_map.items():
+        if pid in last_map:
+            old = last_map[pid]
             if curr["amount"] != old["amount"]:
                 changes.append({
-                    "name": name,
+                    "name": curr.get("name", pid),
                     "old_amount": old["amount"],
                     "new_amount": curr["amount"],
                     "currency": curr["currency"],
@@ -71,7 +71,7 @@ def find_price_changes(current_prices, last_prices):
                 })
         else:
             changes.append({
-                "name": name,
+                "name": curr.get("name", pid),
                 "old_amount": None,
                 "new_amount": curr["amount"],
                 "currency": curr["currency"],
@@ -80,10 +80,10 @@ def find_price_changes(current_prices, last_prices):
             })
 
 
-    for name, old in last_map.items():
-        if name not in curr_map:
+    for pid, old in last_map.items():
+        if pid not in curr_map:
             changes.append({
-                "name": name,
+                "name": old.get("name", pid),
                 "old_amount": old["amount"],
                 "new_amount": None,
                 "currency": old["currency"],
@@ -129,6 +129,8 @@ def format_price_object(details):
     all_prices_display = []
     for p in all_prices_raw:
         all_prices_display.append({
+            "id": p.get("id", "unknown"),
+            "name": p.get("name", "基础版"),
             "amount": p.get("price", 0) / 100,
             "initial": p.get("initial", 0) / 100,
             "discount_percent": p.get("discount_percent", 0),
@@ -293,6 +295,7 @@ def get_game_price(app_id):
         if 'price_overview' in data_content:
             price_overview = data_content['price_overview']
             all_prices.append({
+                "id": "base",
                 "name": "基础版",
                 "price": price_overview.get('final', 0),  # 已经是分
                 "currency": price_overview.get('currency', 'CNY'),
@@ -309,6 +312,7 @@ def get_game_price(app_id):
                         # 检查套餐是否有价格
                         if sub.get('price'):
                             all_prices.append({
+                                "id": f"sub_{sub.get('packageid', 'unknown')}",
                                 "name": sub.get("description", "套餐"),
                                 "price": sub.get('price', 0),  # 已经是分
                                 "currency": "CNY",
@@ -343,6 +347,7 @@ def get_game_price(app_id):
                                 final_price = package_price.get('final', 0)
                                 if final_price:
                                     all_prices.append({
+                                        "id": f"pkg_{package_id}",
                                         "name": package_details.get("name", "同捆包"),
                                         "price": final_price,  # 价格 已经是分 
                                         "currency": "CNY", # 货币
@@ -367,12 +372,12 @@ def get_game_price(app_id):
         # 如果收集到了价格，选择最低的
         if all_prices:
             # 按价格排序，获取最低价格
-            # Deduplicate by name (keep lowest price per name)
+            # Deduplicate by id (keep lowest price per id)
             seen = {}
             for p in all_prices:
-                n = p.get("name", "基础版")
-                if n not in seen or p["price"] < seen[n]["price"]:
-                    seen[n] = p
+                pid = p.get("id", p.get("name", "unknown"))
+                if pid not in seen or p["price"] < seen[pid]["price"]:
+                    seen[pid] = p
             all_prices = list(seen.values())
 
             all_prices.sort(key=lambda x: x.get('price', 0))
@@ -520,7 +525,8 @@ def main():
 
             # Update state with current per-package prices
             price_state[name] = [
-                {"name": p.get("name", "基础版"), "amount": p["amount"], "currency": p["currency"],
+                {"id": p.get("id", "unknown"), "name": p.get("name", "基础版"),
+                 "amount": p["amount"], "currency": p["currency"],
                  "discount_percent": p.get("discount_percent", 0)}
                 for p in current_all
             ]
