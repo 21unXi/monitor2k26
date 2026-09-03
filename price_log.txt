@@ -1,7 +1,3 @@
-[2026-07-14 13:11:38] Citystate Metropolis: No price data
-[2026-07-15 13:11:58] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
-[2026-07-15 13:11:58] Citystate Metropolis: No price data
-[2026-07-16 13:22:39] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
 [2026-07-16 13:22:39] Citystate Metropolis: No price data
 [2026-07-17 13:24:30] NBA 2K26: 41.72 CNY (SALE -86% | Orig: 298.0)
 [2026-07-17 13:24:30] Citystate Metropolis: No price data
@@ -98,3 +94,7 @@
 [2026-09-02 15:11:09] NBA 2K27 [预购|发售:3 Sep, 2026]: 基础版:298.00CNY | NBA 2K27 Standard Edition:298.00CNY | NBA 2K27 Deluxe Edition:460.00CNY | NBA 2K27 Ultra Edition:599.00CNY
 [2026-09-02 15:11:09] Citystate Metropolis [预购|发售:2026]: No price data
 [2026-09-02 15:11:09] Delta Force: Free to Play
+[2026-09-03 15:15:49] NBA 2K26: 基础版:298.00CNY | NBA 2K26:298.00CNY | NBA 2K26 SLAM Edition:369.00CNY | NBA 2K26 Superstar Edition:509.00CNY
+[2026-09-03 15:15:49] NBA 2K27 [预购|发售:3 Sep, 2026]: 基础版:298.00CNY | NBA 2K27 Standard Edition:298.00CNY | NBA 2K27 Deluxe Edition:460.00CNY | NBA 2K27 Ultra Edition:599.00CNY
+[2026-09-03 15:15:49] Citystate Metropolis [预购|发售:2026]: No price data
+[2026-09-03 15:15:49] Delta Force: Free to Play
