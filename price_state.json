@@ -33,16 +33,16 @@
     {
       "id": "base",
       "name": "基础版",
-      "amount": 208.6,
+      "amount": 298.0,
       "currency": "CNY",
-      "discount_percent": 30
+      "discount_percent": 0
     },
     {
       "id": "pkg_1687530",
       "name": "NBA 2K27 Standard Edition",
-      "amount": 208.6,
+      "amount": 298.0,
       "currency": "CNY",
-      "discount_percent": 30
+      "discount_percent": 0
     },
     {
       "id": "pkg_1687538",
